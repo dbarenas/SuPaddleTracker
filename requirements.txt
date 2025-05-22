@@ -2,3 +2,9 @@ fastapi
 uvicorn
 jinja2
 python-multipart
+SQLAlchemy
+aiosqlite
+passlib[bcrypt]
+python-jose[cryptography]
+pydantic-settings
+httpx
