@@ -6,12 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status # Added s
 from fastapi.responses import RedirectResponse, HTMLResponse # Added HTMLResponse
 from fastapi.templating import Jinja2Templates # Added Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional # Ensure Optional is imported if not already
 
 from app.config import Settings
 from app.core.security import create_access_token, verify_token, decrypt_token # Added verify_token, decrypt_token
 from app.crud.crud_strava_user import create_or_update_strava_user, get_user_by_strava_id # Added get_user_by_strava_id
 from app.db.session import get_db_session
-from app.dependencies import oauth2_scheme # Import the scheme for dependency
+from app.dependencies import oauth2_scheme, get_current_user_strava_id_optional # Import the scheme and optional dependency
 from app.models.strava_user import StravaAthleteData, StravaTokenData # Pydantic models for validation
 from app.schemas.token import Token # Pydantic model for the response
 # httpx is already imported
@@ -230,3 +231,27 @@ async def strava_logout(
     # Redirecting to login page might be a good UX.
     # return RedirectResponse(url="/auth/display_login", status_code=status.HTTP_302_FOUND)
     return {"msg": "Successfully logged out. Strava deauthorization attempted. Client should clear JWT."}
+
+
+@router.get("/home", response_class=HTMLResponse)
+async def home_page(
+    request: Request, 
+    db: AsyncSession = Depends(get_db_session), 
+    strava_id: Optional[int] = Depends(get_current_user_strava_id_optional)
+):
+    """
+    Serves the home page. Displays user information if logged in.
+    """
+    user_name = None
+    s_id = None # Renaming to avoid conflict with strava_id from dependency
+    if strava_id is not None: # Check if strava_id has a value
+        user = await get_user_by_strava_id(db, strava_id=strava_id)
+        if user:
+            user_name = f"{user.firstname} {user.lastname}" if user.firstname and user.lastname else user.username
+            s_id = user.strava_id # Assign value to s_id
+    
+    # current_user_name and strava_id are expected by home.html and base.html
+    return templates.TemplateResponse(
+        "home.html", 
+        {"request": request, "current_user_name": user_name, "strava_id": s_id}
+    )

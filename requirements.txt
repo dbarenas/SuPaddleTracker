@@ -8,3 +8,6 @@ passlib[bcrypt]
 python-jose[cryptography]
 pydantic-settings
 httpx
+pytest
+pytest-asyncio
+pytest-httpx
