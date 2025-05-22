@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Home - SUP Competition App{% endblock %}
+
+{% block content %}
+<h2>Welcome to the SUP Competition App!</h2>
+{% if current_user_name %}
+    <p>Hello, <strong>{{ current_user_name }}</strong> (Strava ID: {{ strava_id }})!</p>
+    <p>You are logged in with Strava.</p>
+    <p><a href="/register"><button>Register for a Competition</button></a></p>
+{% else %}
+    <p>Please <a href="/auth/display_login">login with Strava</a> to register for competitions.</p>
+{% endif %}
+{% endblock %}

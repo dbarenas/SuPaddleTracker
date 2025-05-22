@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SUP Competition App{% endblock %}</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        nav { background-color: #333; padding: 10px; margin-bottom: 20px; }
+        nav a { color: white; margin-right: 15px; text-decoration: none; }
+        nav a:hover { text-decoration: underline; }
+        .container { background-color: white; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .alert { padding: 10px; margin-bottom: 15px; border-radius: 3px; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-error { background-color: #f8d7da; color: #721c24; }
+        button, input[type="submit"] { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover, input[type="submit"]:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        {% if current_user_name %}
+            <a href="/register">Register for Competition</a>
+            <span>Welcome, {{ current_user_name }}!</span>
+            <form action="/auth/strava/logout" method="post" style="display: inline;" id="logoutFormNav">
+                <button type="button" onclick="logoutUserNav()" style="background-color: #dc3545;">Logout</button>
+            </form>
+        {% else %}
+            <a href="/auth/display_login">Login</a>
+        {% endif %}
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    <script>
+    // Ensure this script is available or duplicated if base.html is widely used
+    async function logoutUserNav() {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            alert("No token found. Are you logged in?");
+            window.location.href = '/auth/display_login';
+            return;
+        }
+        try {
+            const response = await fetch('/auth/strava/logout', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                alert("Successfully logged out.");
+            } else {
+                const result = await response.json().catch(() => ({ msg: "Logout failed. Please try again." }));
+                alert(result.msg || "Logout failed. Please try again.");
+            }
+        } catch (error) {
+            console.error('Logout failed:', error);
+            alert('Logout failed.');
+        } finally {
+            localStorage.removeItem('jwt_token');
+            window.location.href = '/auth/display_login';
+        }
+    }
+    </script>
+</body>
+</html>

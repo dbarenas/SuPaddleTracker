@@ -1,24 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Registro Competencia SUP</title>
-</head>
-<body>
-    <h2>Registro Competencia SUP</h2>
-    <p>Logged in as: <strong>{{ user_name }}</strong> (Strava ID: {{ strava_id }})</p>
-    <form action="/register" method="post" enctype="multipart/form-data">
-      Nombre: <input type="text" name="nombre" value="{{ user_name }}"><br>
-      Edad: <input type="number" name="edad"><br>
-      Categoría: <select name="categoria">
-        <option value="sub8">Sub 8</option>
-        <option value="sub10">Sub 10</option>
-        <option value="sub12">Sub 12</option>
-        <option value="elite">Élite</option>
-      </select><br>
-      Justificante de pago: <input type="file" name="pago"><br>
-      <input type="submit" value="Register">
-    </form>
-    <hr>
-    <p><a href="/auth/display_login">Back to Login Options</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Register for Competition - SUP Competition App{% endblock %}
+
+{% block content %}
+<h2>Registro Competencia SUP</h2>
+<form action="/register" method="post" enctype="multipart/form-data">
+  Nombre: <input type="text" name="nombre" value="{{ user_name }}"><br><br>
+  Edad: <input type="number" name="edad" required><br><br>
+  Categoría: <select name="categoria">
+    <option value="sub8">Sub 8</option>
+    <option value="sub10">Sub 10</option>
+    <option value="sub12">Sub 12</option>
+    <option value="elite">Élite</option>
+  </select><br><br>
+  Justificante de pago: <input type="file" name="pago" required><br><br>
+  <input type="submit" value="Register">
+</form>
+{% endblock %}
