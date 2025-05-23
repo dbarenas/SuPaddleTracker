@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Manage Events{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Manage Events</h2>
+        <a href="{{ url_for('show_create_event_form') }}" class="btn btn-primary">Create New Event</a>
+    </div>
+
+    {% if events %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Location</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td>{{ event.id }}</td>
+                        <td>{{ event.name }}</td>
+                        <td>{{ event.type.value | title }}</td>
+                        <td>{{ event.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ event.location if event.location else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('admin_view_event_detail', event_id=event.id) }}" class="btn btn-sm btn-info">View</a>
+                            <a href="{{ url_for('edit_event_form', event_id=event.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+                            <a href="{{ url_for('manage_event_registrations_form', event_id=event.id) }}" class="btn btn-sm btn-warning">Registrations</a>
+                            {# Add Delete button/form later if needed #}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No events found. <a href="{{ url_for('show_create_event_form') }}">Create one now!</a></p>
+    {% endif %}
+</div>
+{% endblock %}

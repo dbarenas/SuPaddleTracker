@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Edit Event: {{ event.name if event else 'Edit Event' }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Edit Event: {{ event.name if event else '' }}</h2>
+    {% if event %}
+        <form method="post" action="{{ url_for('update_event_details', event_id=event.id) }}">
+            <div class="mb-3">
+                <label for="name" class="form-label">Event Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ event.name }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="location" class="form-label">Location</label>
+                <input type="text" class="form-control" id="location" name="location" value="{{ event.location if event.location }}">
+            </div>
+            <div class="mb-3">
+                <label for="type" class="form-label">Event Type</label>
+                <select class="form-select" id="type" name="type" required>
+                    {% for et_enum in event_types %} {# Pass event_types like in create form #}
+                        <option value="{{ et_enum.value }}" {% if event.type == et_enum %}selected{% endif %}>
+                            {{ et_enum.value | title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="event_date" class="form-label">Date</label>
+                {# Input type="date" expects YYYY-MM-DD format #}
+                <input type="date" class="form-control" id="event_date" name="event_date" value="{{ event.date.strftime('%Y-%m-%d') if event.date else '' }}" required>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="strava_sync_enabled" name="strava_sync_enabled" value="on" {% if event.strava_sync_enabled %}checked{% endif %}>
+                <label class="form-check-label" for="strava_sync_enabled">
+                    Enable Strava Sync
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Event</button>
+            <a href="{{ url_for('admin_view_event_detail', event_id=event.id) }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    {% else %}
+        <p>Event not found.</p>
+    {% endif %}
+</div>
+{% endblock %}

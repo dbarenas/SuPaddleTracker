@@ -47,10 +47,16 @@ async def show_event_detail_and_registration_form(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     
-    # Pass current_user_strava_id to the template for conditional rendering
+    participant_counts = await event_service.get_event_participant_counts(db=db, event_id=event_id)
+    
     return templates.TemplateResponse(
         "event_detail.html", 
-        {"request": request, "event": event, "current_user_strava_id": current_user_strava_id}
+        {
+            "request": request, 
+            "event": event, 
+            "participant_counts": participant_counts,
+            "current_user_strava_id": current_user_strava_id
+        }
     )
 
 # Endpoint to handle event registration

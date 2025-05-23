@@ -3,9 +3,34 @@
 {% block content %}
 <div class="container">
     <h2>{{ event.name }}</h2>
-    <p><strong>Date:</strong> {{ event.date.strftime('%Y-%m-%d') }}</p>
-    <p><strong>Type:</strong> {{ event.type.value }}</p>
+    {# <p><strong>Date:</strong> {{ event.date.strftime('%Y-%m-%d') }}</p> #}
+    <div class="mb-3">
+        <strong>Event Date:</strong> {{ event.date.strftime('%Y-%m-%d %H:%M:%S %Z') if event.date.tzinfo else event.date.strftime('%Y-%m-%d %H:%M:%S') }}
+        <div id="countdown-timer" class="lead fw-bold mt-2"></div>
+    </div>
+    <hr>
+    <p><strong>Type:</strong> {{ event.type.value | title }}</p> {# Applied title filter #}
     {% if event.location %}<p><strong>Location:</strong> {{ event.location }}</p>{% endif %}
+    
+    <hr>
+    <h4>Participant Summary</h4>
+    {% if participant_counts %}
+        {% for category_name, genders in participant_counts.items() %}
+            <h5>{{ category_name }}</h5>
+            {% if genders %}
+                <ul class="list-inline">
+                    {% for gender, count in genders.items() %}
+                        <li class="list-inline-item">{{ gender }}: {{ count }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                 <p><small>No participants registered in this category yet.</small></p>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p>Participant numbers will be updated soon or no categories with participants yet.</p>
+    {% endif %}
+    <hr>
 
     {% if error %}
         <div class="alert alert-danger" role="alert">
@@ -53,4 +78,44 @@
         <ul>{% for distance in event.distances %}<li>{{ distance.distance_km }} km</li>{% endfor %}</ul>
     {% else %}<p>No specific distances for this event.</p>{% endif %}
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() if super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const countdownElement = document.getElementById('countdown-timer');
+    const eventDateISO = "{{ event.date.isoformat() }}";
+    const eventTime = new Date(eventDateISO).getTime();
+
+    if (!countdownElement || isNaN(eventTime)) {
+        if(countdownElement) countdownElement.innerHTML = "Event date not available for countdown.";
+        return;
+    }
+
+    var interval; // Define interval variable in a scope accessible to clearInterval
+
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = eventTime - now;
+
+        if (distance < 0) {
+            countdownElement.innerHTML = "Event has started or already passed!";
+            if (typeof interval !== 'undefined') clearInterval(interval);
+            return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        countdownElement.innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+    }
+    
+    interval = setInterval(updateCountdown, 1000); // Assign to the accessible interval
+    updateCountdown(); // Initial call
+});
+</script>
 {% endblock %}
