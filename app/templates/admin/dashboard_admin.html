@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Admin Dashboard</h2>
+        <form action="{{ url_for('admin_logout_post') }}" method="post" style="display: inline;">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Admin Logout</button>
+        </form>
+    </div>
+    
+    {% if admin_user %} {# admin_user is passed from admin_dashboard_page route #}
+        <p class="lead">Welcome, {{ admin_user }}!</p>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Manage Events</h5>
+                    <p class="card-text">View, edit, and manage all event details, registrations, and timing.</p>
+                    <a href="{{ url_for('list_admin_events') }}" class="btn btn-primary">Go to Event Management</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Create New Event</h5>
+                    <p class="card-text">Set up a new paddle SUP competition or virtual event.</p>
+                    <a href="{{ url_for('show_create_event_form') }}" class="btn btn-success">Create Event</a>
+                </div>
+            </div>
+        </div>
+        
+        {# Placeholder for future admin sections #}
+        <!--
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User Management</h5>
+                    <p class="card-text">View and manage user accounts (if applicable).</p>
+                    <a href="#" class="btn btn-secondary disabled">Go to User Management</a>
+                </div>
+            </div>
+        </div>
+        -->
+    </div>
+</div>
+{% endblock %}

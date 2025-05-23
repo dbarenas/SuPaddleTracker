@@ -34,24 +34,26 @@
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">
                     <li><a class="dropdown-item" href="{{ url_for('show_create_event_form') }}">Create Event</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('list_events') }}">Manage Events</a></li> 
+                    <li><a class="dropdown-item" href="{{ url_for('list_admin_events') }}">Manage Events</a></li> 
                 </ul>
             </li>
           </ul>
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-            {% if strava_id %} {# strava_id is passed to base template context from main.py's read_root and auth.py's /home #}
+            {% if strava_id %} {# Active Strava user session #}
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('view_dashboard') }}">Dashboard ({{ current_user_name if current_user_name else 'User' }})</a>
               </li>
               <li class="nav-item">
-                {# Use a small form for POST logout #}
                 <form action="{{ url_for('strava_logout') }}" method="post" style="display: inline;">
                     <button type="submit" class="nav-link btn btn-link" style="padding-top: 0.5rem; padding-bottom: 0.5rem;">Logout</button>
                 </form>
               </li>
-            {% else %}
+            {% else %} {# No active Strava user session #}
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('strava_login') }}">Login with Strava</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('admin_login_form') }}">Admin Login</a>
               </li>
             {% endif %}
           </ul>

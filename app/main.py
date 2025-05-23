@@ -23,12 +23,14 @@ from app.routers import registration, race
 from app.routers import auth as auth_router # Import the auth router
 from app.routers import user as user_router # Import the user router
 from app.routers import event_admin as event_admin_router # Import the event admin router
+from app.routers import admin_auth as admin_auth_router # Import the admin_auth router
 
 app.include_router(registration.router)
 app.include_router(race.router)
 app.include_router(auth_router.router) # Include the auth router
 app.include_router(user_router.router) # Include the user router
 app.include_router(event_admin_router.router) # Include the event admin router
+app.include_router(admin_auth_router.router) # Include the admin_auth router
 
 
 @app.get("/", response_class=HTMLResponse)

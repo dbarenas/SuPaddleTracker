@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status, Request
+from fastapi.responses import RedirectResponse # Ensure RedirectResponse is imported
 from fastapi.security import OAuth2PasswordBearer
 
 from app.core.security import verify_token # Assuming this exists

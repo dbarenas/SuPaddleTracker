@@ -16,8 +16,15 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
 @pytest.fixture(scope="session")
 def test_settings():
-    # This ensures that tests use a dedicated, predictable secret key and test database.
-    return Settings(DATABASE_URL=TEST_DATABASE_URL, SECRET_KEY="test_secret_key_for_pytest_!@#$")
+    admin_password_hash_for_testing = "$2b$12$EixZaYVK1G721m3fA2Sg9OJSsLrCccWeCm1Od1yY7Vf2g50Nrviky" # Hash for "testadminpass"
+
+    return Settings(
+        DATABASE_URL=TEST_DATABASE_URL, 
+        SECRET_KEY="test_secret_key_for_pytest_!@#$",
+        ADMIN_USERNAME="testadmin", # Define a test admin username
+        ADMIN_PASSWORD_HASH=admin_password_hash_for_testing, # Use the pre-hashed password
+        ACCESS_TOKEN_EXPIRE_MINUTES=15 # Can set a specific short expiry for tests if needed
+    )
 
 # Fixture to ensure event loop is managed correctly for session-scoped async fixtures
 @pytest.fixture(scope="session")
