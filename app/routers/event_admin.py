@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import date, datetime # date for Form, datetime for combining
 
-from app.dependencies import get_db_session
+from app.dependencies import get_db_session, require_admin_auth # Added require_admin_auth
 from app.services import event_service, race_service
 from app.schemas.event import EventCreate, EventRead, EventType
 from app.schemas.event_category import EventCategoryCreate, EventCategoryRead
@@ -23,7 +23,7 @@ router = APIRouter(
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/create", response_class=HTMLResponse)
-async def show_create_event_form(request: Request):
+async def show_create_event_form(request: Request, admin_user: Optional[str] = Depends(require_admin_auth)):
     return templates.TemplateResponse("admin/create_event.html", {"request": request, "event_types": [et.value for et in EventType]})
 
 @router.post("/", response_class=RedirectResponse) # Changed response_model to response_class
@@ -34,7 +34,8 @@ async def create_new_event(
     type: str = Form(...), 
     event_date: date = Form(...), 
     strava_sync_enabled: Optional[str] = Form(None),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     try:
         event_type_enum = EventType(type)
@@ -66,7 +67,8 @@ async def create_new_event(
 async def list_admin_events_view( # Renamed function for clarity
     request: Request, # Added request
     db: AsyncSession = Depends(get_db_session), 
-    skip: int = 0, limit: int = 100 # Default to more for an admin list
+    skip: int = 0, limit: int = 100, # Default to more for an admin list
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     events = await event_service.get_events(db=db, skip=skip, limit=limit)
     return templates.TemplateResponse(
@@ -88,7 +90,8 @@ async def get_single_event(event_id: int, db: AsyncSession = Depends(get_db_sess
 async def show_admin_event_detail(
     request: Request,
     event_id: int,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     event = await event_service.get_event(db=db, event_id=event_id) # get_event returns EventRead
     if not event:
@@ -102,7 +105,8 @@ async def show_admin_event_detail(
 async def show_edit_event_form(
     request: Request,
     event_id: int,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     event = await event_service.get_event(db=db, event_id=event_id) # Returns EventRead
     if not event:
@@ -121,7 +125,8 @@ async def handle_update_event_details( # Renamed function for clarity
     type: str = Form(...), # This will be the string value from the form, e.g., "on-site"
     event_date: date = Form(...), # FastAPI will parse YYYY-MM-DD from form
     strava_sync_enabled: Optional[str] = Form(None), # HTML form sends 'on' if checked, or nothing if not
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     try:
         event_type_enum = EventType(type) # Convert string from form to EventType enum
@@ -190,7 +195,8 @@ async def list_event_distances(event_id: int, db: AsyncSession = Depends(get_db_
 async def manage_event_registrations_form(
     request: Request,
     event_id: int,
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     event = await event_service.get_event(db=db, event_id=event_id)
     if not event:
@@ -208,10 +214,10 @@ async def assign_dorsal_to_registration(
     event_id: int, 
     registration_id: int,
     dorsal_number: int = Form(...),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     try:
-        # updated_race_result = await race_service.assign_dorsal_number(...) # Corrected variable name
         await race_service.assign_dorsal_number( # Call the service
             db=db,
             registration_id=registration_id,
@@ -230,11 +236,11 @@ async def trigger_start_timer_for_distance(
     event_id: int,
     distance_id: int,
     start_time_manual: Optional[datetime] = Form(None),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     actual_start_time = start_time_manual if start_time_manual else datetime.now()
     try:
-        # updated_results = await race_service.start_event_distance_timer(...) # Corrected variable name
         await race_service.start_event_distance_timer( # Call the service
             db=db, event_id=event_id, distance_id=distance_id, start_time=actual_start_time
         )
@@ -250,11 +256,11 @@ async def record_athlete_finish_time_route(
     event_id: int,
     dorsal_number: int = Form(...),
     finish_time_manual: Optional[datetime] = Form(None),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    admin_user: Optional[str] = Depends(require_admin_auth)
 ):
     actual_finish_time = finish_time_manual if finish_time_manual else datetime.now()
     try:
-        # updated_result = await race_service.record_athlete_finish(...) # Corrected variable name
         await race_service.record_athlete_finish( # Call the service
             db=db, event_id=event_id, dorsal_number=dorsal_number, finish_time=actual_finish_time
         )
