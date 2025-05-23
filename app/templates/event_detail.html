@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ event.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>{{ event.name }}</h2>
+    <p><strong>Date:</strong> {{ event.date.strftime('%Y-%m-%d') }}</p>
+    <p><strong>Type:</strong> {{ event.type.value }}</p>
+    {% if event.location %}<p><strong>Location:</strong> {{ event.location }}</p>{% endif %}
+
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if current_user_strava_id %} {# Check if user is logged in #}
+        <h4>Register for this Event</h4>
+        {% if event.categories and event.distances %}
+            <form method="post" action="{{ url_for('register_for_event', event_id=event.id) }}">
+                <div class="mb-3">
+                    <label for="category_id" class="form-label">Select Category:</label>
+                    <select name="category_id" id="category_id" class="form-select" required>
+                        {% for category in event.categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="distance_id" class="form-label">Select Distance:</label>
+                    <select name="distance_id" id="distance_id" class="form-select" required>
+                        {% for distance in event.distances %}
+                            <option value="{{ distance.id }}">{{ distance.distance_km }} km</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Register</button>
+            </form>
+        {% else %}
+            <p class="text-muted">Registration for this event is not available (missing categories or distances).</p>
+        {% endif %}
+    {% else %}
+        <p><a href="{{ url_for('strava_login') }}">Log in with Strava</a> to register for this event.</p>
+    {% endif %}
+
+    <hr>
+    <h5>Categories:</h5>
+    {% if event.categories %}
+        <ul>{% for category in event.categories %}<li>{{ category.name }}</li>{% endfor %}</ul>
+    {% else %}<p>No specific categories for this event.</p>{% endif %}
+
+    <h5>Distances:</h5>
+    {% if event.distances %}
+        <ul>{% for distance in event.distances %}<li>{{ distance.distance_km }} km</li>{% endfor %}</ul>
+    {% else %}<p>No specific distances for this event.</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Available Events{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Available Events</h2>
+    {% if events %}
+        <div class="list-group">
+            {% for event in events %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><a href="{{ url_for('show_event_detail_and_registration_form', event_id=event.id) }}">{{ event.name }}</a></h5>
+                    <p class="card-text"><strong>Date:</strong> {{ event.date.strftime('%Y-%m-%d') }}</p>
+                    <p class="card-text"><strong>Type:</strong> {{ event.type.value }}</p>
+                    {% if event.location %}<p class="card-text"><strong>Location:</strong> {{ event.location }}</p>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No events available at the moment.</p>
+    {% endif %}
+</div>
+{% endblock %}

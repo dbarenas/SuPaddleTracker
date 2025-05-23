@@ -1,0 +1,72 @@
+/* app/static/css/main.css */
+body {
+    font-family: sans-serif;
+    /* padding-top: 56px; /* REMOVED - Only for fixed-top navbar */
+    padding-bottom: 20px;
+}
+
+.navbar {
+    /* Customizations if needed, e.g., specific background color if not using bg-dark */
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* Main content spacing */
+main.container {
+    padding-top: 20px;
+}
+
+/* Cards used on dashboard and potentially elsewhere */
+.card {
+    margin-bottom: 1.5rem;
+}
+
+.card-header strong {
+    font-size: 1.1rem;
+}
+
+/* Tables for results, leaderboards */
+.table th {
+    font-weight: bold;
+    background-color: #f8f9fa; /* Light grey for table headers */
+}
+
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* Forms: general spacing for form elements if needed beyond Bootstrap */
+form .mb-3 { /* Bootstrap class, ensure consistent use or add custom class */
+    /* margin-bottom: 1rem !important; /* Example */
+}
+
+/* Buttons: ensure consistent styling if overriding Bootstrap */
+.btn-primary {
+    /* background-color: #007bff; */
+    /* border-color: #007bff; */
+}
+.btn-sm {
+     margin-top: 5px; /* Align small buttons better in some contexts */
+}
+
+
+/* Footer styling */
+footer.container {
+    color: #6c757d; /* Muted text color */
+    font-size: 0.9em;
+}
+
+/* Alert styling (flash messages) */
+.alert {
+    /* Custom alert styling if needed */
+}
+
+/* Specific adjustments for dashboard sections */
+.dashboard-section h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}

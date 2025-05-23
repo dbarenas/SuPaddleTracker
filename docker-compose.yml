@@ -7,4 +7,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - .:/app # For development: reflects code changes immediately
+    env_file:
+      - .env # Load environment variables from .env file

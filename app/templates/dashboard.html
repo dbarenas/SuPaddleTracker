@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ user_info.firstname if user_info else 'User' }}'s Dashboard{% endblock %}
+
+{# Define or import macros for formatting time and pace #}
+{% macro format_time(seconds) %}
+    {% if seconds is not none %}
+        {% set h = (seconds // 3600) | int %}
+        {% set m = ((seconds % 3600) // 60) | int %}
+        {% set s = (seconds % 60) | int %}
+        {% if h > 0 %}{{ "%02d:" | format(h) }}{% endif %}{{ "%02d:" | format(m) }}{{ "%02d" | format(s) }}
+    {% else %}
+        N/A
+    {% endif %}
+{% endmacro %}
+
+{% macro format_pace(seconds_per_km) %}
+    {% if seconds_per_km is not none %}
+        {% set m = (seconds_per_km // 60) | int %}
+        {% set s = (seconds_per_km % 60) | int %}
+        {{ "%02d:" | format(m) }}{{ "%02d/km" | format(s) }}
+    {% else %}
+        N/A
+    {% endif %}
+{% endmacro %}
+
+{% block content %}
+<div class="container">
+    {% if user_info %}
+        <h2>Welcome, {{ user_info.firstname }} {{ user_info.lastname }}!</h2>
+    {% else %}
+        <h2>User Dashboard</h2>
+    {% endif %}
+
+    {# Registered Events Section from previous implementation - ensure it's clear #}
+    <div class="dashboard-section">
+    <h3>My Registered Events</h3>
+    {% if registrations %}
+        {% for reg in registrations %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>{{ reg.event.name }}</strong> - {{ reg.event.date.strftime('%Y-%m-%d') }}
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Category: {{ reg.category.name }}</li>
+                    <li class="list-group-item">Distance: {{ reg.distance.distance_km }} km</li>
+                    <li class="list-group-item">Status: {{ reg.status.value | title }}</li>
+                    {% if reg.race_result and reg.race_result.net_time_seconds is not none %}
+                        <li class="list-group-item">Your Time: {{ format_time(reg.race_result.net_time_seconds) }}</li>
+                    {% endif %}
+                    {% if reg.payment_proof_url %}
+                        <li class="list-group-item"><a href="{{ reg.payment_proof_url }}" target="_blank">View Payment Proof</a></li>
+                    {% elif reg.status.value == 'pending' %}
+                        <li class="list-group-item">
+                            <form action="{{ url_for('upload_payment_proof', registration_id=reg.id) }}" method="post" enctype="multipart/form-data" class="d-inline-flex align-items-center">
+                                <input type="file" name="payment_proof_file" class="form-control form-control-sm me-2" style="max-width: 250px;" required>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Upload Proof</button>
+                            </form>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>You have no event registrations yet.</p>
+    {% endif %}
+    </div>
+    <hr>
+
+    <div class="dashboard-section">
+    <h3>My Virtual Activities</h3>
+    {% if virtual_results_summary %}
+        <ul class="list-group mb-3">
+            {% for vr in virtual_results_summary %}
+                <li class="list-group-item">
+                    <strong>{{ vr.name if vr.name else "Virtual Activity" }}</strong> ({{ vr.distance_km }} km)
+                    - Time: {{ format_time(vr.elapsed_time_seconds) }}
+                    - Date: {{ vr.activity_date.strftime('%Y-%m-%d') if vr.activity_date else 'N/A' }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No virtual activities recorded yet.</p>
+    {% endif %}
+    <hr>
+    <div class="my-3">
+        <form id="stravaSyncForm" action="{{ url_for('trigger_strava_sync') }}" method="post">
+            <button type="submit" class="btn btn-info">Sync Strava Activities</button>
+        </form>
+        {# Add a placeholder to display sync status messages #}
+        <div id="strava-sync-status" class="mt-2"></div>
+    </div>
+    </div>
+    <hr>
+    <div class="dashboard-section">
+    <h3>My Personal Bests</h3>
+    {% if personal_bests %}
+        <div class="row">
+            {% for dist_key, pb_data in personal_bests.items() %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card">
+                        <div class="card-header"><strong>{{ dist_key }}</strong></div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Time: {{ format_time(pb_data.time_seconds) }}</li>
+                            <li class="list-group-item">Pace: {{ format_pace(pb_data.pace_seconds_per_km) }}</li>
+                            <li class="list-group-item">Activity: {{ pb_data.event_name }}</li>
+                            <li class="list-group-item">Date: {{ pb_data.activity_date }}</li>
+                            <li class="list-group-item">Source: {{ pb_data.source }}</li>
+                            <li class="list-group-item">Actual Dist: {{ "%.2f km" | format(pb_data.actual_distance_km) }}</li>
+                        </ul>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No personal bests calculated yet. Complete some activities!</p>
+    {% endif %}
+</div>
+
+{# Add some JavaScript to handle the form submission and display message #}
+{# This is optional, basic form POST will work but JS can make it smoother #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const syncForm = document.getElementById('stravaSyncForm'); // Use ID selector
+    if (syncForm) {
+        syncForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const statusDiv = document.getElementById('strava-sync-status');
+            const submitButton = syncForm.querySelector('button[type="submit"]');
+            
+            statusDiv.innerHTML = '<div class="alert alert-info">Syncing...</div>';
+            submitButton.disabled = true;
+
+            try {
+                const response = await fetch(this.action, { 
+                    method: 'POST',
+                    headers: {
+                        // If you have CSRF tokens or other headers, add them here
+                        // 'X-CSRF-Token': 'your_csrf_token_if_needed' 
+                    }
+                });
+                // Check if response is JSON before trying to parse
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const result = await response.json();
+                    if (response.ok) {
+                        statusDiv.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
+                        // Optionally, reload parts of the page or the whole page
+                        // Example: Reload after 2 seconds to see updated virtual activities
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        statusDiv.innerHTML = `<div class="alert alert-danger">Error: ${result.detail || 'Unknown error'}</div>`;
+                    }
+                } else {
+                    // Handle non-JSON responses, e.g. if server error page is HTML
+                    const textResult = await response.text();
+                    statusDiv.innerHTML = `<div class="alert alert-danger">Server error (Status ${response.status}): ${textResult.substring(0, 300)}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-danger">Request failed: ${error}</div>`;
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

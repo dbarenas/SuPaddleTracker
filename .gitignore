@@ -16,3 +16,6 @@ venv/
 
 # Other
 .DS_Store
+
+# Uploads
+app/static/uploads/
