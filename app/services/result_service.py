@@ -9,6 +9,7 @@ from app.models.registration import Registration
 from app.models.event_category import EventCategory
 from app.models.event_distance import EventDistance
 from app.models.strava_user import StravaUserDB
+from app.models.event import Event
 from app.schemas.race_result import RaceResultRead
 from app.schemas.registration import RegistrationReadMinimal # For RaceResultRead
 from app.schemas.strava_user import UserRead as UserSchema # For RegistrationReadMinimal
@@ -103,8 +104,8 @@ async def get_yearly_leaderboard(
         )
         .join(RaceResult.registration)
         .join(Registration.user)
-        .join(Registration.event)
-        .join(Registration.distance)
+        .join(Registration.event)  # Join to Event through Registration
+        .join(Registration.distance)  # Join to EventDistance through Registration
         .where(RaceResult.net_time_seconds.isnot(None))
     )
     if year:

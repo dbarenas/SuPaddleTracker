@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     # IMPORTANT: This key MUST be changed to a strong, randomly generated key in production
     # and managed securely (e.g., via environment variable).
     SECRET_KEY: str = "YOUR_VERY_SECRET_KEY_FOR_ENCRYPTION_AND_JWT"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 43200  # 30 days
+    SECURE_COOKIE: bool = False
 
     # New Admin Credentials
     ADMIN_USERNAME: str = "admin" 
