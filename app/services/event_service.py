@@ -23,11 +23,14 @@ async def create_event(db: AsyncSession, event_data: EventCreate) -> EventRead:
 async def get_event(db: AsyncSession, event_id: int) -> Optional[EventRead]:
     stmt = (
         select(Event)
-        .options(joinedload(Event.categories), joinedload(Event.distances))
+        .options(
+            joinedload(Event.categories),
+            joinedload(Event.distances)
+        )
         .where(Event.id == event_id)
     )
     result = await db.execute(stmt)
-    db_event = result.scalar_one_or_none()
+    db_event = result.unique().scalar_one_or_none()
     if db_event:
         return EventRead.model_validate(db_event)
     return None
@@ -35,13 +38,16 @@ async def get_event(db: AsyncSession, event_id: int) -> Optional[EventRead]:
 async def get_events(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[EventRead]:
     stmt = (
         select(Event)
-        .options(joinedload(Event.categories), joinedload(Event.distances))
+        .options(
+            joinedload(Event.categories),
+            joinedload(Event.distances)
+        )
+        .order_by(Event.date.desc()) # Example ordering
         .offset(skip)
         .limit(limit)
-        .order_by(Event.date.desc()) # Example ordering
     )
     result = await db.execute(stmt)
-    db_events = result.scalars().all()
+    db_events = result.unique().scalars().all()
     return [EventRead.model_validate(db_event) for db_event in db_events]
 
 async def add_category_to_event(db: AsyncSession, category_data: EventCategoryCreate) -> EventCategoryRead:
