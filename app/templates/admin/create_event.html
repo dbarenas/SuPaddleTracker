@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Event{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Create New Event</h2>
+    <form method="post" action="{{ url_for('create_new_event') }}">
+        <div class="mb-3">
+            <label for="name" class="form-label">Event Name</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+        </div>
+        <div class="mb-3">
+            <label for="location" class="form-label">Location (optional for virtual events)</label>
+            <input type="text" class="form-control" id="location" name="location">
+        </div>
+        <div class="mb-3">
+            <label for="type" class="form-label">Event Type</label>
+            <select class="form-select" id="type" name="type" required>
+                {% for et in event_types %}
+                <option value="{{ et }}">{{ et.replace("_", " ") | title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="event_date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="event_date" name="event_date" required>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="strava_sync_enabled" name="strava_sync_enabled" value="on">
+            <label class="form-check-label" for="strava_sync_enabled">
+                Enable Strava Sync (for virtual events)
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Event</button>
+    </form>
+</div>
+{% endblock %}

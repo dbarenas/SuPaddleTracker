@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Results for {{ event.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Results: {{ event.name }}</h2>
+    <p>Date: {{ event.date.strftime('%Y-%m-%d') }}</p>
+
+    {% if classified_results %}
+        {% for category_name, distances in classified_results.items() %}
+            <h3>Category: {{ category_name }}</h3>
+            {% for distance_km_str, results in distances.items() %}
+                <h4>Distance: {{ distance_km_str }}</h4>
+                {% if results %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                <th>Athlete</th>
+                                <th>Dorsal #</th>
+                                <th>Net Time</th>
+                                <th>Start Time</th>
+                                <th>Finish Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in results %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    {% if result.registration and result.registration.user %}
+                                        {{ result.registration.user.firstname }} {{ result.registration.user.lastname }}
+                                        ({{ result.registration.user.username if result.registration.user.username else 'N/A' }})
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ result.dorsal_number if result.dorsal_number is not none else 'N/A' }}</td>
+                                <td>
+                                    {% if result.net_time_seconds is not none %}
+                                        {{ (result.net_time_seconds // 3600) ~ 'h ' ~ 
+                                           ((result.net_time_seconds % 3600) // 60) ~ 'm ' ~ 
+                                           (result.net_time_seconds % 60) ~ 's' }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>{{ result.start_time.strftime('%Y-%m-%d %H:%M:%S') if result.start_time else 'N/A' }}</td>
+                                <td>{{ result.finish_time.strftime('%Y-%m-%d %H:%M:%S') if result.finish_time else 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p>No results recorded for this distance.</p>
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    {% else %}
+        <p>No results available for this event yet.</p>
+    {% endif %}
+    <hr>
+    <a href="{{ url_for('list_available_events') }}" class="btn btn-secondary">Back to Event List</a>
+</div>
+{% endblock %}

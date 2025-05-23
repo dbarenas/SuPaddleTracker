@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel # Field removed as it's not used in the current models
 from sqlalchemy import Column, Integer, String, DateTime # func removed
+from sqlalchemy.orm import relationship # Added for relationships
 # from sqlalchemy.sql import func # For default/onupdate server-side timestamps if preferred - kept commented for reference
 
 from app.db.base import Base # Import Base from the previously created file
@@ -70,6 +71,10 @@ class StravaUserDB(Base):
     # onupdate=datetime.utcnow for SQLAlchemy often requires more setup or is handled at app level.
     # It's kept here as per instruction but might need adjustment later.
     last_login_at: datetime = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    registrations = relationship("Registration", back_populates="user", cascade="all, delete-orphan")
+    virtual_results = relationship("VirtualResult", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<StravaUserDB(id={self.id}, strava_id={self.strava_id}, username='{self.username}')>"

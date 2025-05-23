@@ -86,9 +86,48 @@ def client(override_get_db, test_settings) -> TestClient: # Added test_settings
     
     # If your app's settings are module-level and read at import time in various places,
     # direct patching of those instances might be needed here or via autouse fixtures.
-    # e.g., from app.core.security import settings as security_settings
-    # monkeypatch.setattr(security_settings, 'SECRET_KEY', test_settings.SECRET_KEY)
     
     test_client = TestClient(app)
     yield test_client # Use yield to allow for teardown if TestClient had any
     app.dependency_overrides.clear() # Clear overrides after test
+
+
+# Autouse fixture to patch settings in app.core.security for the test session
+@pytest.fixture(scope="session", autouse=True)
+def patch_security_settings(test_settings: Settings, monkeypatch_session):
+    """
+    Patches the global 'settings' instance in app.core.security and re-initializes
+    dependent global variables like cipher_suite.
+    """
+    # Patch the settings instance
+    monkeypatch_session.setattr("app.core.security.settings", test_settings)
+
+    # Re-initialize Fernet cipher_suite in app.core.security
+    # This is necessary because cipher_suite is created at module import time
+    # using the original settings.SECRET_KEY.
+    import app.core.security
+    import base64
+    from cryptography.fernet import Fernet
+
+    secret_key_bytes_test = test_settings.SECRET_KEY.encode('utf-8')
+    padded_key_test = secret_key_bytes_test[:32].ljust(32, b'\0')
+    encryption_key_test = base64.urlsafe_b64encode(padded_key_test)
+    
+    app.core.security.cipher_suite = Fernet(encryption_key_test)
+    
+    # Also, if JWT related constants like ALGORITHM or ACCESS_TOKEN_EXPIRE_MINUTES
+    # were initialized from settings at module level and are used by functions directly,
+    # they might need re-evaluation or patching if they differ from test_settings.
+    # In this case, create_access_token and verify_token directly use app.core.security.settings.SECRET_KEY
+    # and app.core.security.ALGORITHM, so patching settings is sufficient for JWT.
+    # ACCESS_TOKEN_EXPIRE_MINUTES is a module constant in security.py, not from settings.
+    # If it needed to be test-configurable, it should be part of Settings class.
+
+
+# Fixture for monkeypatching at session scope
+@pytest.fixture(scope='session')
+def monkeypatch_session():
+    from _pytest.monkeypatch import MonkeyPatch
+    m = MonkeyPatch()
+    yield m
+    m.undo()

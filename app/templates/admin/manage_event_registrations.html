@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Manage Registrations for {{ event.name }}{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Manage Registrations: {{ event.name }}</h2>
+    <p>Date: {{ event.date.strftime('%Y-%m-%d') }}</p>
+
+    {% if registrations %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                    <th>Category</th>
+                    <th>Distance</th>
+                    <th>Dorsal #</th>
+                    <th>Assign Dorsal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg in registrations %}
+                <tr>
+                    <td>{{ reg.user.firstname }} {{ reg.user.lastname }} (ID: {{ reg.user.strava_id }})</td>
+                    <td>{{ reg.category.name }}</td>
+                    <td>{{ reg.distance.distance_km }} km</td>
+                    <td>{{ reg.race_result.dorsal_number if reg.race_result and reg.race_result.dorsal_number is not none else 'N/A' }}</td>
+                    <td>
+                        {% if reg.race_result %} {# RaceResult should always exist now #}
+                            <form method="post" action="{{ url_for('assign_dorsal_to_registration', event_id=event.id, registration_id=reg.id) }}">
+                                <div class="input-group">
+                                    <input type="number" name="dorsal_number" class="form-control form-control-sm" placeholder="Dorsal" 
+                                           value="{{ reg.race_result.dorsal_number if reg.race_result.dorsal_number is not none else '' }}" required>
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        {{ 'Update' if reg.race_result.dorsal_number is not none else 'Assign' }}
+                                    </button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <span class="text-muted">Race record pending</span> {# Should not happen if RaceResult is always created #}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No registrations for this event yet.</p>
+    {% endif %}
+    <hr>
+    <h4>Timing Controls</h4>
+
+    {# Start Timer for a Distance #}
+    <h5>Start Timer for Event Distances</h5>
+    {% if event.distances %}
+        {% for dist in event.distances %}
+            <form method="post" action="{{ url_for('trigger_start_timer_for_distance', event_id=event.id, distance_id=dist.id) }}" class="mb-2">
+                <label for="start_time_manual_{{ dist.id }}" class="form-label">Start Time for {{ dist.distance_km }} km (Optional, defaults to NOW):</label>
+                <input type="datetime-local" name="start_time_manual" id="start_time_manual_{{ dist.id }}" class="form-control form-control-sm mb-1">
+                <button type="submit" class="btn btn-warning btn-sm">Start {{ dist.distance_km }} km Timer</button>
+            </form>
+        {% endfor %}
+    {% else %}
+        <p>No distances defined for this event to start timers.</p>
+    {% endif %}
+
+    <hr>
+    {# Record Finish Time #}
+    <h5>Record Athlete Finish</h5>
+    <form method="post" action="{{ url_for('record_athlete_finish_time_route', event_id=event.id) }}" class="mb-3">
+        <div class="row g-2">
+            <div class="col-auto">
+                <label for="dorsal_number" class="form-label">Dorsal Number:</label>
+                <input type="number" name="dorsal_number" id="dorsal_number" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-auto">
+                <label for="finish_time_manual" class="form-label">Finish Time (Optional, defaults to NOW):</label>
+                <input type="datetime-local" name="finish_time_manual" id="finish_time_manual" class="form-control form-control-sm">
+            </div>
+            <div class="col-auto align-self-end">
+                <button type="submit" class="btn btn-info btn-sm">Record Finish</button>
+            </div>
+        </div>
+    </form>
+    <hr>
+    <a href="{{ url_for('list_events') }}" class="btn btn-secondary">Back to Admin Event List</a>
+</div>
+{% endblock %}

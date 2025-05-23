@@ -160,7 +160,17 @@ async def strava_callback(
     jwt_payload = {"sub": str(db_user.strava_id), "strava_id": db_user.strava_id}
     jwt_access_token = create_access_token(data=jwt_payload)
 
-    return Token(access_token=jwt_access_token, token_type="bearer")
+    # Redirect to dashboard and set cookie
+    response = RedirectResponse(url="/user/dashboard", status_code=status.HTTP_302_FOUND)
+    response.set_cookie(
+        key="access_token",
+        value=jwt_access_token,
+        httponly=True, # Makes the cookie inaccessible to client-side JavaScript
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60, # Max age in seconds
+        samesite="Lax", # Can be "Strict", "Lax", or "None"
+        secure=settings.SECURE_COOKIE, # Set to True in production (requires HTTPS)
+    )
+    return response
 
 
 @router.post("/strava/logout")
@@ -230,7 +240,11 @@ async def strava_logout(
     # Client is responsible for deleting the JWT.
     # Redirecting to login page might be a good UX.
     # return RedirectResponse(url="/auth/display_login", status_code=status.HTTP_302_FOUND)
-    return {"msg": "Successfully logged out. Strava deauthorization attempted. Client should clear JWT."}
+    # On logout, the client should clear the cookie. Here we can also instruct the browser to expire it.
+    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND) # Redirect to home
+    response.delete_cookie(key="access_token", httponly=True, samesite="Lax", secure=settings.SECURE_COOKIE)
+    return response
+    # return {"msg": "Successfully logged out. Strava deauthorization attempted. Client should clear JWT."}
 
 
 @router.get("/home", response_class=HTMLResponse)
