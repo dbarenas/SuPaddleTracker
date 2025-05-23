@@ -4,14 +4,28 @@
 <div class="container">
     <h2>Available Events</h2>
     {% if events %}
-        <div class="list-group">
+        <div class="list-group"> {# This class might not be needed if using cards for each item #}
             {% for event in events %}
             <div class="card mb-3">
                 <div class="card-body">
-                    <h5 class="card-title"><a href="{{ url_for('show_event_detail_and_registration_form', event_id=event.id) }}">{{ event.name }}</a></h5>
+                    <h5 class="card-title">{{ event.name }}</h5> {# Name is no longer the primary link #}
                     <p class="card-text"><strong>Date:</strong> {{ event.date.strftime('%Y-%m-%d') }}</p>
-                    <p class="card-text"><strong>Type:</strong> {{ event.type.value }}</p>
+                    <p class="card-text"><strong>Type:</strong> {{ event.type.value | title }}</p> {# Added title filter #}
                     {% if event.location %}<p class="card-text"><strong>Location:</strong> {{ event.location }}</p>{% endif %}
+                    
+                    {# Display categories and distances briefly #}
+                    {% if event.categories %}
+                        <p class="card-text"><small>Categories: 
+                        {% for cat in event.categories %}{{ cat.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                        </small></p>
+                    {% endif %}
+                    {% if event.distances %}
+                         <p class="card-text"><small>Distances: 
+                         {% for dist in event.distances %}{{ dist.distance_km }}km{% if not loop.last %}, {% endif %}{% endfor %}
+                         </small></p>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('show_event_detail_and_registration_form', event_id=event.id) }}" class="btn btn-primary mt-2">View Details & Register</a>
                 </div>
             </div>
             {% endfor %}

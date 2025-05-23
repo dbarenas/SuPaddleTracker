@@ -5,56 +5,60 @@ from sqlalchemy import select # Adjusted import
 from datetime import date, datetime, timezone
 
 from app.models.event import Event, EventType
-from app.schemas.event import EventRead # For response validation
+# from app.schemas.event import EventRead # No longer directly validating full JSON response body here
 
 @pytest.mark.asyncio
 async def test_create_new_event_api_success(client: TestClient, db_session: AsyncSession):
     # Arrange: Prepare form data for the event
+    event_name = "Test API Event Redirect"
+    event_location = "Test Location Redirect"
+    event_type_value = EventType.ON_SITE.value
+    event_date_iso = date.today().isoformat()
+    
     event_form_data = {
-        "name": "Test API Event",
-        "location": "Test Location",
-        "type": EventType.ON_SITE.value, # Use enum value
-        "event_date": date.today().isoformat(), # e.g., "2023-10-27"
-        "strava_sync_enabled": "on" # HTML form checkbox value
+        "name": event_name,
+        "location": event_location,
+        "type": event_type_value,
+        "event_date": event_date_iso,
+        "strava_sync_enabled": "on" 
     }
     
-    # Expected datetime for comparison (assuming time defaults to midnight)
     expected_event_datetime = datetime.combine(date.today(), datetime.min.time())
-    # If your app assumes a specific timezone for date -> datetime conversion, apply it
-    # For example, if it converts to UTC:
-    # expected_event_datetime = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
-    # The current implementation of create_new_event in router combines with datetime.min.time() (naive)
+    # If timezone is involved in conversion by server, adjust expected_event_datetime.
+    # Current server logic creates naive datetime from date.
 
-    # Act: Make the POST request to the endpoint
-    # The TestClient handles data serialization based on parameter types (Form in this case)
-    response = client.post("/admin/events/", data=event_form_data)
+    # Act: Make the POST request
+    response = client.post("/admin/events/", data=event_form_data, allow_redirects=False) # Important: allow_redirects=False
 
-    # Assert: Check the response
-    assert response.status_code == 200, response.text
-    response_data = response.json()
+    # Assert: Check the response for redirect
+    assert response.status_code == 303, "Expected HTTP 303 See Other for redirect"
+    assert "location" in response.headers, "Location header missing in redirect response"
     
-    assert response_data["name"] == event_form_data["name"]
-    assert response_data["location"] == event_form_data["location"]
-    assert response_data["type"] == event_form_data["type"]
-    # Compare datetime part by part or by converting response string to datetime
-    assert response_data["date"].startswith(expected_event_datetime.isoformat().split('T')[0]) # Check date part
-    # Example: if response_data["date"] is "2023-10-27T00:00:00"
-    # parsed_response_date = datetime.fromisoformat(response_data["date"])
-    # assert parsed_response_date == expected_event_datetime # This would compare naive datetimes
-    assert response_data["strava_sync_enabled"] == True # "on" should be converted to True
+    redirect_location = response.headers["location"]
 
     # Assert: Check if the event was actually created in the database
-    event_id = response_data["id"]
+    # We need to get the ID. The ID is in the redirect_location URL.
+    # e.g., /admin/events/{event_id}/view
+    try:
+        event_id_str = redirect_location.split("/")[-2] # Assuming URL like .../{event_id}/view
+        event_id = int(event_id_str)
+    except (IndexError, ValueError) as e:
+        pytest.fail(f"Could not parse event_id from redirect Location header '{redirect_location}': {e}")
+
     db_event = await db_session.get(Event, event_id)
     
-    assert db_event is not None
-    assert db_event.name == event_form_data["name"]
-    assert db_event.location == event_form_data["location"]
-    assert db_event.type == EventType.ON_SITE # Compare with Enum member
-    # Compare datetime object from DB with expected_event_datetime
-    # Ensure db_event.date is also naive or both are timezone-aware for comparison
-    assert db_event.date == expected_event_datetime 
+    assert db_event is not None, "Event not found in database after creation"
+    assert db_event.name == event_name
+    assert db_event.location == event_location
+    assert db_event.type == EventType.ON_SITE
+    assert db_event.date == expected_event_datetime # Compare Python datetime objects
     assert db_event.strava_sync_enabled == True
+
+    # Optionally, test the redirect target page
+    redirect_response = client.get(redirect_location, allow_redirects=False) # follow_redirects=False is default for get
+    assert redirect_response.status_code == 200, f"Redirected page {redirect_location} did not return 200 OK"
+    # Basic check that the event name appears on the admin detail page
+    assert event_name in redirect_response.text, "Event name not found on the admin detail page after redirect"
 
 @pytest.mark.asyncio
 async def test_create_new_event_api_invalid_type(client: TestClient, db_session: AsyncSession):

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Admin View: {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Admin View: {{ event.name }}</h2>
+    <div class="card">
+        <div class="card-header">Event Details</div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>ID:</strong> {{ event.id }}</li>
+            <li class="list-group-item"><strong>Name:</strong> {{ event.name }}</li>
+            <li class="list-group-item"><strong>Location:</strong> {{ event.location if event.location else 'N/A' }}</li>
+            <li class="list-group-item"><strong>Type:</strong> {{ event.type.value | title }}</li>
+            <li class="list-group-item"><strong>Date:</strong> {{ event.date.strftime('%Y-%m-%d %H:%M:%S') }}</li>
+            <li class="list-group-item"><strong>Strava Sync Enabled:</strong> {{ event.strava_sync_enabled }}</li>
+        </ul>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">Categories</div>
+        {% if event.categories %}
+            <ul class="list-group list-group-flush">
+                {% for category in event.categories %}
+                    <li class="list-group-item">{{ category.name }} (ID: {{ category.id }})</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="card-body"><p class="card-text">No categories defined for this event.</p></div>
+        {% endif %}
+        {# Add Category form could go here or link to it #}
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">Distances</div>
+        {% if event.distances %}
+            <ul class="list-group list-group-flush">
+                {% for distance in event.distances %}
+                    <li class="list-group-item">{{ distance.distance_km }} km (ID: {{ distance.id }})</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="card-body"><p class="card-text">No distances defined for this event.</p></div>
+        {% endif %}
+        {# Add Distance form could go here or link to it #}
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('edit_event_form', event_id=event.id) }}" class="btn btn-secondary">Edit Event</a>
+        <a href="{{ url_for('manage_event_registrations_form', event_id=event.id) }}" class="btn btn-info">Manage Registrations</a>
+        <a href="{{ url_for('list_admin_events') }}" class="btn btn-outline-secondary">Back to Admin Event List</a> 
+        {# 'list_admin_events' will be the name for the new admin list page route #}
+    </div>
+</div>
+{% endblock %}
